@@ -12,6 +12,7 @@ import {
   Download,
   Image as ImageIcon,
   Library,
+  Activity,
 } from 'lucide-react';
 import SongGenerator from '@/components/SongGenerator';
 import SongLibrary from '@/components/SongLibrary';
@@ -21,6 +22,7 @@ import WaveformEditor from '@/components/WaveformEditor';
 import StemSeparator from '@/components/StemSeparator';
 import AlbumArtGenerator from '@/components/AlbumArtGenerator';
 import ExportPanel from '@/components/ExportPanel';
+import AudioAnalyzer from '@/components/AudioAnalyzer';
 import type { UploadedFile } from '@/types';
 
 export interface Song {
@@ -40,6 +42,7 @@ type Tab =
   | 'lyrics'
   | 'waveform'
   | 'stems'
+  | 'analysis'
   | 'albumart'
   | 'export'
   | 'library';
@@ -66,6 +69,7 @@ export default function Home() {
     { id: 'lyrics' as Tab, label: 'Lyrics', icon: Type },
     { id: 'waveform' as Tab, label: 'Editor', icon: Waveform },
     { id: 'stems' as Tab, label: 'Stems', icon: Scissors },
+    { id: 'analysis' as Tab, label: 'Analysis', icon: Activity },
     { id: 'albumart' as Tab, label: 'Album Art', icon: ImageIcon },
     { id: 'export' as Tab, label: 'Export', icon: Download },
     { id: 'library' as Tab, label: 'Library', icon: Library },
@@ -226,6 +230,13 @@ export default function Home() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Analysis Tab */}
+        {activeTab === 'analysis' && (
+          <div className="max-w-5xl mx-auto">
+            <AudioAnalyzer />
           </div>
         )}
 
