@@ -193,12 +193,21 @@ export default function Home() {
                         >
                           <div className="flex items-center justify-between mb-2">
                             <span className="font-semibold text-white">{channel}</span>
-                            <span className="text-purple-300">Bus A</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-purple-300">Bus A</span>
+                              <button className="rounded-full bg-white/10 px-2 py-1 text-[10px] uppercase tracking-wide hover:bg-white/20">
+                                Mute
+                              </button>
+                            </div>
                           </div>
                           <div className="space-y-3">
                             <label className="flex items-center justify-between">
-                              <span>Pan</span>
-                              <input type="range" className="w-24 accent-purple-400" />
+                              <span>Pan L/R</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-gray-400">L</span>
+                                <input type="range" className="w-24 accent-purple-400" />
+                                <span className="text-[10px] text-gray-400">R</span>
+                              </div>
                             </label>
                             <label className="flex items-center justify-between">
                               <span>Reverb</span>
@@ -249,6 +258,27 @@ export default function Home() {
                     </div>
                     <div className="mt-4 space-y-3">
                       <label className="text-xs text-gray-400">Output Level</label>
+                      <input type="range" className="w-full accent-purple-400" />
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/40 p-4">
+                    <h3 className="text-sm font-semibold mb-3">Master Out</h3>
+                    <div className="space-y-3 text-xs text-gray-300">
+                      <div className="flex items-center justify-between">
+                        <span>Master Bus</span>
+                        <span className="text-white">Stereo Out</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Peak</span>
+                        <span className="text-white">-0.6 dB</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Limiter</span>
+                        <span className="text-white">Soft Clip</span>
+                      </div>
+                    </div>
+                    <div className="mt-4 space-y-3">
+                      <label className="text-xs text-gray-400">Master Output</label>
                       <input type="range" className="w-full accent-purple-400" />
                     </div>
                   </div>
