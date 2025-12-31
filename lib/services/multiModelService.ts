@@ -39,6 +39,11 @@ export class MultiModelService {
     // Generate with all selected models in parallel
     const generations = await this.generateWithModels(models, params);
 
+    // Check if we got any successful generations
+    if (generations.length === 0) {
+      throw new Error('All AI models failed to generate. This may be due to network issues or API limits.');
+    }
+
     // Rank generations by quality
     const ranked = await this.rankGenerations(generations, params.prompt);
 

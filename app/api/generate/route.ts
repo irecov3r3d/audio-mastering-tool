@@ -15,9 +15,10 @@ interface GenerateRequest {
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const body: GenerateRequest = await request.json();
+  // Parse request body outside try block so it's available in catch
+  const body: GenerateRequest = await request.json();
 
+  try {
     // Validate request
     if (!body.prompt || !body.genre || !body.mood) {
       return NextResponse.json(
