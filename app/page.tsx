@@ -167,106 +167,20 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-              <div>
-                <h2 className="text-xl font-semibold">
-                  {workspace === 'recording' ? 'Recording Room' : 'Mixing Room'}
-                </h2>
-                <p className="text-gray-300 text-sm">
-                  {workspace === 'recording'
-                    ? 'Capture vocals with pitch detection, auto-tune, and vault tagging.'
-                    : 'Dial in panning, compression, gate, 12-band EQ, and reverb.'}
-                </p>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-gray-300">
-                <CassetteTape className="w-4 h-4" />
-                Session: “Broken Phone Memo Vault”
-              </div>
-            </div>
-
-            {workspace === 'recording' ? (
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="space-y-4">
-                  <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-                    <h3 className="text-sm font-semibold mb-3">Live Capture</h3>
-                    <div className="flex items-center gap-3 text-sm text-gray-300 mb-4">
-                      <Mic className="w-4 h-4 text-purple-300" />
-                      Input: SM7B • Gain 62%
-                    </div>
-                    <div className="space-y-3">
-                      <label className="text-xs text-gray-400">Input Gain</label>
-                      <input type="range" className="w-full accent-purple-400" />
-                      <label className="text-xs text-gray-400">Monitor Mix</label>
-                      <input type="range" className="w-full accent-purple-400" />
-                    </div>
-                    <button className="mt-4 w-full py-3 rounded-lg bg-purple-500 hover:bg-purple-600 font-semibold">
-                      Arm &amp; Record
-                    </button>
-                  </div>
-                  <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-                    <h3 className="text-sm font-semibold mb-3">Pitch Intelligence</h3>
-                    <div className="flex items-center justify-between text-sm text-gray-300 mb-4">
-                      <span className="flex items-center gap-2">
-                        <Wand2 className="w-4 h-4 text-purple-300" />
-                        Auto-Tune Follow
-                      </span>
-                      <span className="px-3 py-1 rounded-full bg-purple-500/30 text-xs">
-                        Active
-                      </span>
-                    </div>
-                    <div className="space-y-3 text-xs text-gray-300">
-                      <div className="flex items-center justify-between">
-                        <span>Key Target</span>
-                        <span className="text-white">A Minor</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Pitch Detection</span>
-                        <span className="text-white">Realtime</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Correction Speed</span>
-                        <span className="text-white">Fast</span>
-                      </div>
-                    </div>
-                  </div>
+          {workspace === 'mixing' && (
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                <div>
+                  <h2 className="text-xl font-semibold">Mixing Room</h2>
+                  <p className="text-gray-300 text-sm">
+                    Dial in panning, compression, gate, 12-band EQ, and reverb.
+                  </p>
                 </div>
-
-                <div className="space-y-4">
-                  <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-                    <h3 className="text-sm font-semibold mb-3">Voice FX Presets</h3>
-                    <div className="grid gap-3 text-sm text-gray-300">
-                      <div className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2">
-                        <span>Broken Phone</span>
-                        <span className="text-xs text-purple-300">Preset</span>
-                      </div>
-                      <div className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2">
-                        <span>Warm Tube</span>
-                        <span className="text-xs text-purple-300">Preset</span>
-                      </div>
-                      <div className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2">
-                        <span>Airy Double</span>
-                        <span className="text-xs text-purple-300">Preset</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-                    <h3 className="text-sm font-semibold mb-3">Vault Tags &amp; Storage</h3>
-                    <div className="flex flex-wrap gap-2 text-xs text-gray-300 mb-3">
-                      {['Hook Ideas', 'Verse Vault', 'Freestyle', 'Adlibs'].map(tag => (
-                        <span key={tag} className="px-3 py-1 rounded-full bg-white/10">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                    <button className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm">
-                      <FolderLock className="w-4 h-4" />
-                      Save to Vault
-                    </button>
-                  </div>
+                <div className="flex items-center gap-2 text-xs text-gray-300">
+                  <CassetteTape className="w-4 h-4" />
+                  Session: “Broken Phone Memo Vault”
                 </div>
               </div>
-            ) : (
               <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
                 <div className="space-y-4">
                   <div className="rounded-xl border border-white/10 bg-black/40 p-4">
@@ -354,8 +268,8 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </section>
 
         <aside className="space-y-6">
@@ -407,6 +321,98 @@ export default function Home() {
               Auto-tune follows pitch changes instantly, with realtime correction previews.
             </div>
           </div>
+
+          {workspace === 'recording' && (
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                <div>
+                  <h3 className="text-lg font-semibold">Recording Room</h3>
+                  <p className="text-gray-300 text-sm">
+                    Capture vocals with pitch detection, auto-tune, and vault tagging.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-300">
+                  <CassetteTape className="w-4 h-4" />
+                  Session: “Broken Phone Memo Vault”
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="rounded-xl border border-white/10 bg-black/40 p-4">
+                  <h4 className="text-sm font-semibold mb-3">Live Capture</h4>
+                  <div className="flex items-center gap-3 text-sm text-gray-300 mb-4">
+                    <Mic className="w-4 h-4 text-purple-300" />
+                    Input: SM7B • Gain 62%
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-xs text-gray-400">Input Gain</label>
+                    <input type="range" className="w-full accent-purple-400" />
+                    <label className="text-xs text-gray-400">Monitor Mix</label>
+                    <input type="range" className="w-full accent-purple-400" />
+                  </div>
+                  <button className="mt-4 w-full py-3 rounded-lg bg-purple-500 hover:bg-purple-600 font-semibold">
+                    Arm &amp; Record
+                  </button>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/40 p-4">
+                  <h4 className="text-sm font-semibold mb-3">Pitch Intelligence</h4>
+                  <div className="flex items-center justify-between text-sm text-gray-300 mb-4">
+                    <span className="flex items-center gap-2">
+                      <Wand2 className="w-4 h-4 text-purple-300" />
+                      Auto-Tune Follow
+                    </span>
+                    <span className="px-3 py-1 rounded-full bg-purple-500/30 text-xs">
+                      Active
+                    </span>
+                  </div>
+                  <div className="space-y-3 text-xs text-gray-300">
+                    <div className="flex items-center justify-between">
+                      <span>Key Target</span>
+                      <span className="text-white">A Minor</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Pitch Detection</span>
+                      <span className="text-white">Realtime</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Correction Speed</span>
+                      <span className="text-white">Fast</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/40 p-4">
+                  <h4 className="text-sm font-semibold mb-3">Voice FX Presets</h4>
+                  <div className="grid gap-3 text-sm text-gray-300">
+                    <div className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2">
+                      <span>Broken Phone</span>
+                      <span className="text-xs text-purple-300">Preset</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2">
+                      <span>Warm Tube</span>
+                      <span className="text-xs text-purple-300">Preset</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2">
+                      <span>Airy Double</span>
+                      <span className="text-xs text-purple-300">Preset</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/40 p-4">
+                  <h4 className="text-sm font-semibold mb-3">Vault Tags &amp; Storage</h4>
+                  <div className="flex flex-wrap gap-2 text-xs text-gray-300 mb-3">
+                    {['Hook Ideas', 'Verse Vault', 'Freestyle', 'Adlibs'].map(tag => (
+                      <span key={tag} className="px-3 py-1 rounded-full bg-white/10">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  <button className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm">
+                    <FolderLock className="w-4 h-4" />
+                    Save to Vault
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {spectralVisible && (
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
