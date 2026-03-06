@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AudioLines,
   AudioWaveform,
@@ -43,11 +43,7 @@ export default function Home() {
   const [spectralVisible, setSpectralVisible] = useState(false);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [transportState, setTransportState] = useState<'stopped' | 'playing' | 'paused'>('stopped');
-  const [transportTime, setTransportTime] = useState(0);
   const [recordingState, setRecordingState] = useState<'idle' | 'recording' | 'saving'>('idle');
-  const [spectralBars, setSpectralBars] = useState<number[]>(
-    Array.from({ length: spectralBarCount }, () => 12),
-  );
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const masterGainRef = useRef<GainNode | null>(null);
@@ -113,45 +109,6 @@ export default function Home() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!spectralVisible || !analyserRef.current) return;
-    let frame = 0;
-    const analyser = analyserRef.current;
-    const data = new Uint8Array(analyser.frequencyBinCount);
-
-    const updateBars = () => {
-      analyser.getByteFrequencyData(data);
-      const bucketSize = Math.floor(data.length / spectralBarCount);
-      const nextBars = Array.from({ length: spectralBarCount }, (_, index) => {
-        const start = index * bucketSize;
-        const end = start + bucketSize;
-        let sum = 0;
-        for (let i = start; i < end; i += 1) {
-          sum += data[i];
-        }
-        return Math.max(6, Math.round((sum / bucketSize / 255) * 100));
-      });
-      setSpectralBars(nextBars);
-      frame = requestAnimationFrame(updateBars);
-    };
-
-    updateBars();
-    return () => cancelAnimationFrame(frame);
-  }, [spectralVisible]);
-
-  useEffect(() => {
-    if (transportState !== 'playing') return;
-    let frame = 0;
-    const updateTransport = () => {
-      const firstNode = trackNodesRef.current.values().next().value;
-      if (firstNode) {
-        setTransportTime(firstNode.audio.currentTime);
-      }
-      frame = requestAnimationFrame(updateTransport);
-    };
-    updateTransport();
-    return () => cancelAnimationFrame(frame);
-  }, [transportState]);
 
   const ensureAudioContext = () => {
     if (audioContextRef.current) return audioContextRef.current;
@@ -180,7 +137,6 @@ export default function Home() {
       );
       if (allEnded) {
         setTransportState('stopped');
-        setTransportTime(0);
       }
     };
     const source = context.createMediaElementSource(audio);
@@ -244,29 +200,24 @@ export default function Home() {
     }
   };
 
-  const handlePlay = async () => {
+  const handlePlay = async (startTime: number) => {
     if (tracks.length === 0) return;
     const context = ensureAudioContext();
     await context.resume();
     tracks.forEach(track => attachTrackNodes(track));
     trackNodesRef.current.forEach(node => {
-      node.audio.currentTime = transportTime;
+      node.audio.currentTime = startTime;
       node.audio.play();
     });
     setTransportState('playing');
   };
 
   const handlePause = () => {
-    const firstNode = trackNodesRef.current.values().next().value;
-    if (firstNode) {
-      setTransportTime(firstNode.audio.currentTime);
-    }
     trackNodesRef.current.forEach(node => node.audio.pause());
     setTransportState('paused');
   };
 
   const handleRewind = () => {
-    setTransportTime(0);
     trackNodesRef.current.forEach(node => {
       node.audio.pause();
       node.audio.currentTime = 0;
@@ -275,15 +226,13 @@ export default function Home() {
   };
 
   const handleFastForward = () => {
-    const nextTime = Math.min(sessionDuration, transportTime + 5);
-    setTransportTime(nextTime);
     trackNodesRef.current.forEach(node => {
+      const nextTime = Math.min(sessionDuration, node.audio.currentTime + 5);
       node.audio.currentTime = nextTime;
     });
   };
 
   const handleScrub = (value: number) => {
-    setTransportTime(value);
     trackNodesRef.current.forEach(node => {
       node.audio.currentTime = value;
     });
@@ -398,61 +347,18 @@ export default function Home() {
               </button>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={handlePlay}
-              disabled={tracks.length === 0}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm"
-            >
-              <Play className="w-4 h-4" />
-              Play
-            </button>
-            <button
-              onClick={handlePause}
-              disabled={tracks.length === 0}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm"
-            >
-              <Pause className="w-4 h-4" />
-              Pause
-            </button>
-            <button
-              onClick={handleRewind}
-              disabled={tracks.length === 0}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm"
-            >
-              <Rewind className="w-4 h-4" />
-              Rewind
-            </button>
-            <button
-              onClick={handleFastForward}
-              disabled={tracks.length === 0}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm"
-            >
-              <FastForward className="w-4 h-4" />
-              Fast Forward
-            </button>
-            <div className="flex items-center gap-3 px-4 py-2 rounded-lg bg-white/10 text-sm">
-              <AudioWaveform className="w-4 h-4 text-purple-300" />
-              <span className="text-gray-300">Scrub Wheel</span>
-              <input
-                type="range"
-                min={0}
-                max={sessionDuration || 0}
-                step={0.01}
-                value={transportTime}
-                onChange={event => handleScrub(Number(event.target.value))}
-                disabled={sessionDuration === 0}
-                className="w-24 accent-purple-400"
-              />
-            </div>
-            <button
-              onClick={() => setSpectralVisible(prev => !prev)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm"
-            >
-              <AudioLines className="w-4 h-4" />
-              Spectral View
-            </button>
-          </div>
+          <TransportControls
+            tracks={tracks}
+            transportState={transportState}
+            sessionDuration={sessionDuration}
+            trackNodesRef={trackNodesRef}
+            handlePlay={handlePlay}
+            handlePause={handlePause}
+            handleRewind={handleRewind}
+            handleFastForward={handleFastForward}
+            handleScrub={handleScrub}
+            setSpectralVisible={setSpectralVisible}
+          />
         </div>
       </header>
 
@@ -866,28 +772,194 @@ export default function Home() {
             </div>
           )}
 
-          {spectralVisible && (
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Spectral Analysis</h3>
-                <SlidersHorizontal className="w-5 h-5 text-purple-300" />
-              </div>
-              <div className="flex items-end gap-2 h-32">
-                {spectralBars.map((height, index) => (
-                  <div
-                    key={index}
-                    style={{ height: `${height}%` }}
-                    className="flex-1 rounded-full bg-gradient-to-t from-purple-600/80 to-pink-400/40"
-                  />
-                ))}
-              </div>
-              <p className="mt-3 text-xs text-gray-400">
-                Toggle spectral view on demand to keep the main workspace focused.
-              </p>
-            </div>
-          )}
+          <SpectralVisualizer
+            analyserRef={analyserRef}
+            spectralVisible={spectralVisible}
+          />
         </aside>
       </div>
     </main>
   );
 }
+
+/**
+ * ⚡ Bolt Optimization: Localized high-frequency re-renders.
+ * By moving the 60fps spectral state and its update logic into this memoized component,
+ * we prevent the entire dashboard (Home) from re-rendering on every animation frame.
+ */
+const SpectralVisualizer = React.memo(function SpectralVisualizer({
+  analyserRef,
+  spectralVisible,
+}: {
+  analyserRef: React.RefObject<AnalyserNode | null>;
+  spectralVisible: boolean;
+}) {
+  const [spectralBars, setSpectralBars] = useState<number[]>(
+    Array.from({ length: spectralBarCount }, () => 12),
+  );
+
+  useEffect(() => {
+    if (!spectralVisible || !analyserRef.current) return;
+    let frame = 0;
+    const analyser = analyserRef.current;
+    const data = new Uint8Array(analyser.frequencyBinCount);
+
+    const updateBars = () => {
+      analyser.getByteFrequencyData(data);
+      const bucketSize = Math.floor(data.length / spectralBarCount);
+      const nextBars = Array.from({ length: spectralBarCount }, (_, index) => {
+        const start = index * bucketSize;
+        const end = start + bucketSize;
+        let sum = 0;
+        for (let i = start; i < end; i += 1) {
+          sum += data[i];
+        }
+        return Math.max(6, Math.round((sum / bucketSize / 255) * 100));
+      });
+      setSpectralBars(nextBars);
+      frame = requestAnimationFrame(updateBars);
+    };
+
+    updateBars();
+    return () => cancelAnimationFrame(frame);
+  }, [spectralVisible, analyserRef]);
+
+  if (!spectralVisible) return null;
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold">Spectral Analysis</h3>
+        <SlidersHorizontal className="w-5 h-5 text-purple-300" />
+      </div>
+      <div className="flex items-end gap-2 h-32">
+        {spectralBars.map((height, index) => (
+          <div
+            key={index}
+            style={{ height: `${height}%` }}
+            className="flex-1 rounded-full bg-gradient-to-t from-purple-600/80 to-pink-400/40"
+          />
+        ))}
+      </div>
+      <p className="mt-3 text-xs text-gray-400">
+        Toggle spectral view on demand to keep the main workspace focused.
+      </p>
+    </div>
+  );
+});
+
+/**
+ * ⚡ Bolt Optimization: Localized playback progress updates.
+ * Moving transportTime state here prevents the entire application from re-rendering
+ * multiple times per second during audio playback.
+ */
+const TransportControls = React.memo(function TransportControls({
+  tracks,
+  transportState,
+  sessionDuration,
+  trackNodesRef,
+  handlePlay,
+  handlePause,
+  handleRewind,
+  handleFastForward,
+  handleScrub,
+  setSpectralVisible,
+}: {
+  tracks: Track[];
+  transportState: 'stopped' | 'playing' | 'paused';
+  sessionDuration: number;
+  trackNodesRef: React.RefObject<Map<string, any>>;
+  handlePlay: (startTime: number) => void;
+  handlePause: () => void;
+  handleRewind: () => void;
+  handleFastForward: () => void;
+  handleScrub: (value: number) => void;
+  setSpectralVisible: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
+  const [transportTime, setTransportTime] = useState(0);
+
+  useEffect(() => {
+    let frame = 0;
+    const updateTransport = () => {
+      if (transportState === 'playing') {
+        const firstNode = trackNodesRef.current?.values().next().value;
+        if (firstNode) {
+          setTransportTime(firstNode.audio.currentTime);
+        }
+        frame = requestAnimationFrame(updateTransport);
+      } else if (transportState === 'stopped') {
+        setTransportTime(0);
+      }
+    };
+    updateTransport();
+    return () => cancelAnimationFrame(frame);
+  }, [transportState, trackNodesRef]);
+
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <button
+        onClick={() => handlePlay(transportTime)}
+        disabled={tracks.length === 0}
+        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm"
+      >
+        <Play className="w-4 h-4" />
+        Play
+      </button>
+      <button
+        onClick={handlePause}
+        disabled={tracks.length === 0}
+        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm"
+      >
+        <Pause className="w-4 h-4" />
+        Pause
+      </button>
+      <button
+        onClick={handleRewind}
+        disabled={tracks.length === 0}
+        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm"
+      >
+        <Rewind className="w-4 h-4" />
+        Rewind
+      </button>
+      <button
+        onClick={() => {
+          handleFastForward();
+          const firstNode = trackNodesRef.current?.values().next().value;
+          if (firstNode) {
+            setTransportTime(firstNode.audio.currentTime);
+          }
+        }}
+        disabled={tracks.length === 0}
+        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm"
+      >
+        <FastForward className="w-4 h-4" />
+        Fast Forward
+      </button>
+      <div className="flex items-center gap-3 px-4 py-2 rounded-lg bg-white/10 text-sm">
+        <AudioWaveform className="w-4 h-4 text-purple-300" />
+        <span className="text-gray-300">Scrub Wheel</span>
+        <input
+          type="range"
+          min={0}
+          max={sessionDuration || 0}
+          step={0.01}
+          value={transportTime}
+          onChange={event => {
+            const val = Number(event.target.value);
+            setTransportTime(val);
+            handleScrub(val);
+          }}
+          disabled={sessionDuration === 0}
+          className="w-24 accent-purple-400"
+        />
+      </div>
+      <button
+        onClick={() => setSpectralVisible(prev => !prev)}
+        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm"
+      >
+        <AudioLines className="w-4 h-4" />
+        Spectral View
+      </button>
+    </div>
+  );
+});

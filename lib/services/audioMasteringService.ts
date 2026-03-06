@@ -120,7 +120,7 @@ export class AudioMasteringService {
     );
 
     for (let i = 0; i < processedChannels.length; i++) {
-      processedBuffer.copyToChannel(processedChannels[i], i);
+      processedBuffer.getChannelData(i).set(processedChannels[i]);
     }
 
     return processedBuffer;
@@ -133,7 +133,9 @@ export class AudioMasteringService {
     const channels: Float32Array[] = [];
     for (let i = 0; i < audioBuffer.numberOfChannels; i++) {
       const channelData = audioBuffer.getChannelData(i);
-      channels.push(new Float32Array(channelData));
+      const copy = new Float32Array(channelData.length);
+      copy.set(channelData);
+      channels.push(copy);
     }
     return channels;
   }
@@ -146,7 +148,11 @@ export class AudioMasteringService {
     eqBands: EQBand[],
     sampleRate: number
   ): Float32Array[] {
-    const processedChannels = channels.map(channel => new Float32Array(channel));
+    const processedChannels = channels.map(channel => {
+      const copy = new Float32Array(channel.length);
+      copy.set(channel);
+      return copy;
+    });
 
     for (const band of eqBands) {
       if (!band.enabled) continue;
@@ -168,10 +174,10 @@ export class AudioMasteringService {
    * Apply biquad filter (EQ)
    */
   private applyBiquadFilter(
-    input: Float32Array,
+    input: Float32Array<ArrayBufferLike>,
     band: EQBand,
     sampleRate: number
-  ): Float32Array {
+  ): Float32Array<ArrayBuffer> {
     const output = new Float32Array(input.length);
     const coeffs = this.calculateBiquadCoefficients(band, sampleRate);
 
@@ -298,7 +304,11 @@ export class AudioMasteringService {
     compSettings: CompressionSettings[],
     sampleRate: number
   ): Float32Array[] {
-    let processedChannels = channels.map(ch => new Float32Array(ch));
+    let processedChannels = channels.map(ch => {
+      const copy = new Float32Array(ch.length);
+      copy.set(ch);
+      return copy;
+    });
 
     for (const compressor of compSettings) {
       if (!compressor.enabled) continue;
@@ -313,10 +323,10 @@ export class AudioMasteringService {
    * Apply single compressor
    */
   private applyCompressor(
-    channels: Float32Array[],
+    channels: Float32Array<ArrayBufferLike>[],
     settings: CompressionSettings,
     sampleRate: number
-  ): Float32Array[] {
+  ): Float32Array<ArrayBuffer>[] {
     const threshold = Math.pow(10, settings.threshold / 20);
     const ratio = settings.ratio;
     const attackSamples = (settings.attack / 1000) * sampleRate;
