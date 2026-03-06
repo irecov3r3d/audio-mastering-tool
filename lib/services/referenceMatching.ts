@@ -166,8 +166,11 @@ export class ReferenceMatchingService {
     ];
 
     return bands.map(band => {
-      const targetPct = target.frequency[band.key as keyof typeof target.frequency].percentage;
-      const refPct = reference.frequency[band.key as keyof typeof reference.frequency].percentage;
+      const targetBand = target.frequency[band.key as keyof typeof target.frequency];
+      const refBand = reference.frequency[band.key as keyof typeof reference.frequency];
+
+      const targetPct = typeof targetBand === 'object' && 'percentage' in targetBand ? targetBand.percentage : 0;
+      const refPct = typeof refBand === 'object' && 'percentage' in refBand ? refBand.percentage : 0;
       const diff = targetPct - refPct;
 
       let adjustment = '';
