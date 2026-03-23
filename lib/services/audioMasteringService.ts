@@ -175,10 +175,10 @@ export class AudioMasteringService {
    * Apply biquad filter (EQ)
    */
   private applyBiquadFilter(
-    input: Float32Array<ArrayBufferLike>,
+    input: Float32Array,
     band: EQBand,
     sampleRate: number
-  ): Float32Array<ArrayBuffer> {
+  ): Float32Array {
     const output = new Float32Array(input.length);
     const coeffs = this.calculateBiquadCoefficients(band, sampleRate);
 
@@ -324,10 +324,10 @@ export class AudioMasteringService {
    * Apply single compressor
    */
   private applyCompressor(
-    channels: Float32Array<ArrayBufferLike>[],
+    channels: Float32Array[],
     settings: CompressionSettings,
     sampleRate: number
-  ): Float32Array<ArrayBuffer>[] {
+  ): Float32Array[] {
     const threshold = Math.pow(10, settings.threshold / 20);
     const ratio = settings.ratio;
     const attackSamples = (settings.attack / 1000) * sampleRate;
