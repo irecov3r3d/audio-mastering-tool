@@ -57,7 +57,7 @@ export class AudioMasteringService {
     // 6. Normalization to target LUFS
     // 7. Dithering (if needed)
 
-    let processedChannels = channels;
+    let processedChannels: any[] = channels;
 
     // 1. EQ
     if (settings.eqBands.some(band => band.enabled)) {
@@ -121,7 +121,6 @@ export class AudioMasteringService {
 
     for (let i = 0; i < processedChannels.length; i++) {
       processedBuffer.getChannelData(i).set(processedChannels[i]);
-      processedBuffer.copyToChannel(processedChannels[i] as any, i);
     }
 
     return processedBuffer;
@@ -145,10 +144,10 @@ export class AudioMasteringService {
    * Apply EQ to audio
    */
   private applyEQ(
-    channels: Float32Array[],
+    channels: any[],
     eqBands: EQBand[],
     sampleRate: number
-  ): Float32Array[] {
+  ): any[] {
     const processedChannels = channels.map(channel => {
       const copy = new Float32Array(channel.length);
       copy.set(channel);
@@ -175,10 +174,10 @@ export class AudioMasteringService {
    * Apply biquad filter (EQ)
    */
   private applyBiquadFilter(
-    input: Float32Array<ArrayBufferLike>,
+    input: any,
     band: EQBand,
     sampleRate: number
-  ): Float32Array<ArrayBuffer> {
+  ): any {
     const output = new Float32Array(input.length);
     const coeffs = this.calculateBiquadCoefficients(band, sampleRate);
 
@@ -301,10 +300,10 @@ export class AudioMasteringService {
    * Apply compression
    */
   private applyCompression(
-    channels: Float32Array[],
+    channels: any[],
     compSettings: CompressionSettings[],
     sampleRate: number
-  ): Float32Array[] {
+  ): any[] {
     let processedChannels = channels.map(ch => {
       const copy = new Float32Array(ch.length);
       copy.set(ch);
@@ -324,10 +323,10 @@ export class AudioMasteringService {
    * Apply single compressor
    */
   private applyCompressor(
-    channels: Float32Array<ArrayBufferLike>[],
+    channels: any[],
     settings: CompressionSettings,
     sampleRate: number
-  ): Float32Array<ArrayBuffer>[] {
+  ): any[] {
     const threshold = Math.pow(10, settings.threshold / 20);
     const ratio = settings.ratio;
     const attackSamples = (settings.attack / 1000) * sampleRate;
@@ -383,10 +382,10 @@ export class AudioMasteringService {
    * Apply limiting
    */
   private applyLimiting(
-    channels: Float32Array[],
+    channels: any[],
     settings: LimiterSettings,
     sampleRate: number
-  ): Float32Array[] {
+  ): any[] {
     const threshold = Math.pow(10, settings.threshold / 20);
     const ceiling = Math.pow(10, settings.ceiling / 20);
     const releaseSamples = (settings.release / 1000) * sampleRate;
@@ -435,9 +434,9 @@ export class AudioMasteringService {
    * Apply mid/side processing
    */
   private applyMidSideProcessing(
-    channels: Float32Array[],
+    channels: any[],
     settings: MidSideSettings
-  ): Float32Array[] {
+  ): any[] {
     if (channels.length < 2) {
       // Mono - no mid/side processing
       return channels;
@@ -473,9 +472,9 @@ export class AudioMasteringService {
    * Apply harmonic exciter
    */
   private applyExciter(
-    channels: Float32Array[],
+    channels: any[],
     settings: ExciterSettings
-  ): Float32Array[] {
+  ): any[] {
     const amount = settings.amount / 100;
     const mix = settings.mix / 100;
 
@@ -500,9 +499,9 @@ export class AudioMasteringService {
    * Apply saturation
    */
   private applySaturation(
-    channels: Float32Array[],
+    channels: any[],
     settings: SaturationSettings
-  ): Float32Array[] {
+  ): any[] {
     const drive = settings.drive / 100;
     const mix = settings.mix / 100;
 
@@ -556,10 +555,10 @@ export class AudioMasteringService {
    * Normalize to target LUFS
    */
   private normalizeToLUFS(
-    channels: Float32Array[],
+    channels: any[],
     targetLUFS: number,
     sampleRate: number
-  ): Float32Array[] {
+  ): any[] {
     // Calculate current LUFS (simplified)
     const mono = this.convertToMono(channels);
     let sumSquares = 0;
@@ -589,9 +588,9 @@ export class AudioMasteringService {
    * Apply dithering
    */
   private applyDithering(
-    channels: Float32Array[],
+    channels: any[],
     settings: DitheringSettings
-  ): Float32Array[] {
+  ): any[] {
     if (settings.type === 'none') return channels;
 
     const targetBits = settings.depth;
@@ -626,7 +625,7 @@ export class AudioMasteringService {
   /**
    * Convert multi-channel to mono
    */
-  private convertToMono(channels: Float32Array[]): Float32Array {
+  private convertToMono(channels: any[]): Float32Array {
     if (channels.length === 1) return channels[0];
 
     const mono = new Float32Array(channels[0].length);

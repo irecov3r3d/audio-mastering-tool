@@ -1,15 +1,11 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, memo } from 'react';
 import {
   Play,
   Pause,
   Scissors,
   Volume2,
-  Zap,
-  Download,
-  RotateCcw,
-  RotateCw,
   Sliders,
 } from 'lucide-react';
 
@@ -17,6 +13,193 @@ interface WaveformEditorProps {
   audioUrl: string;
   onSave?: (editedUrl: string) => void;
 }
+
+// --- Sub-components ---
+
+const TrimControls = memo(({
+  duration,
+  trimStart,
+  setTrimStart,
+  trimEnd,
+  setTrimEnd,
+  handleTrim
+}: {
+  duration: number;
+  trimStart: number;
+  setTrimStart: (val: number) => void;
+  trimEnd: number;
+  setTrimEnd: (val: number) => void;
+  handleTrim: () => void;
+}) => (
+  <div className="mb-6 p-4 bg-black/20 rounded-lg">
+    <div className="flex items-center gap-4 mb-3">
+      <Scissors className="w-5 h-5 text-purple-400" />
+      <h4 className="text-sm font-medium text-white">Trim Audio</h4>
+    </div>
+
+    <div className="grid grid-cols-2 gap-4 mb-4">
+      <div>
+        <label className="block text-xs text-gray-400 mb-1">Start Time</label>
+        <input
+          type="number"
+          min="0"
+          max={duration}
+          step="0.1"
+          value={trimStart}
+          onChange={(e) => setTrimStart(Number(e.target.value))}
+          className="w-full px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs text-gray-400 mb-1">End Time</label>
+        <input
+          type="number"
+          min={trimStart}
+          max={duration}
+          step="0.1"
+          value={trimEnd}
+          onChange={(e) => setTrimEnd(Number(e.target.value))}
+          className="w-full px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+        />
+      </div>
+    </div>
+
+    <button
+      onClick={handleTrim}
+      className="w-full py-2 bg-purple-500 hover:bg-purple-600 text-white font-medium rounded-lg transition-colors"
+    >
+      Apply Trim
+    </button>
+  </div>
+));
+
+TrimControls.displayName = 'TrimControls';
+
+const EffectsPanel = memo(({
+  handleApplyEffects
+}: {
+  handleApplyEffects: (effect: string) => void;
+}) => {
+  const [showEffects, setShowEffects] = useState(false);
+
+  return (
+    <div className="p-4 bg-black/20 rounded-lg">
+      <button
+        onClick={() => setShowEffects(!showEffects)}
+        className="flex items-center gap-2 text-white mb-3"
+      >
+        <Sliders className="w-5 h-5 text-purple-400" />
+        <span className="text-sm font-medium">Audio Effects</span>
+      </button>
+
+      {showEffects && (
+        <div className="grid grid-cols-2 gap-2">
+          {['reverb', 'echo', 'bass-boost', 'normalize'].map((effect) => (
+            <button
+              key={effect}
+              onClick={() => handleApplyEffects(effect)}
+              className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm text-white transition-colors capitalize"
+            >
+              {effect.replace('-', ' ')}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+});
+
+EffectsPanel.displayName = 'EffectsPanel';
+
+const WaveformCanvas = memo(({
+  waveformData,
+  currentTime,
+  duration,
+  trimStart,
+  trimEnd,
+  selectedRegion,
+  handleCanvasClick
+}: {
+  waveformData: number[];
+  currentTime: number;
+  duration: number;
+  trimStart: number;
+  trimEnd: number;
+  selectedRegion: { start: number; end: number } | null;
+  handleCanvasClick: (e: React.MouseEvent<HTMLCanvasElement>) => void;
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || waveformData.length === 0) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const { width, height } = canvas;
+    const barWidth = width / waveformData.length;
+
+    // Clear canvas
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.fillRect(0, 0, width, height);
+
+    // Draw waveform bars
+    waveformData.forEach((value, index) => {
+      const barHeight = value * height * 0.8;
+      const x = index * barWidth;
+      const y = (height - barHeight) / 2;
+
+      const progress = (index / waveformData.length) * duration;
+
+      // Color based on state
+      let color = '#8b5cf6'; // Default purple
+
+      if (progress < trimStart || progress > trimEnd) {
+        color = 'rgba(139, 92, 246, 0.2)'; // Dimmed (trimmed region)
+      } else if (progress <= currentTime) {
+        color = '#ec4899'; // Pink (played region)
+      }
+
+      if (selectedRegion && progress >= selectedRegion.start && progress <= selectedRegion.end) {
+        color = '#10b981'; // Green (selected region)
+      }
+
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, barWidth - 1, barHeight);
+    });
+
+    // Draw playhead
+    const playheadX = (currentTime / duration) * width;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(playheadX - 1, 0, 2, height);
+
+    // Draw trim markers
+    const trimStartX = (trimStart / duration) * width;
+    const trimEndX = (trimEnd / duration) * width;
+
+    ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+    ctx.fillRect(0, 0, trimStartX, height);
+    ctx.fillRect(trimEndX, 0, width - trimEndX, height);
+  }, [waveformData, currentTime, duration, trimStart, trimEnd, selectedRegion]);
+
+  return (
+    <div className="mb-6">
+      <canvas
+        ref={canvasRef}
+        width={1200}
+        height={200}
+        onClick={handleCanvasClick}
+        className="w-full h-48 bg-black/20 rounded-lg cursor-crosshair"
+      />
+    </div>
+  );
+});
+
+WaveformCanvas.displayName = 'WaveformCanvas';
+
+// --- Main Component ---
 
 export default function WaveformEditor({ audioUrl, onSave }: WaveformEditorProps) {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -27,11 +210,8 @@ export default function WaveformEditor({ audioUrl, onSave }: WaveformEditorProps
   const [trimEnd, setTrimEnd] = useState(0);
   const [waveformData, setWaveformData] = useState<number[]>([]);
   const [selectedRegion, setSelectedRegion] = useState<{ start: number; end: number } | null>(null);
-  const [showEffects, setShowEffects] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   // Load audio and generate waveform
   useEffect(() => {
@@ -39,11 +219,6 @@ export default function WaveformEditor({ audioUrl, onSave }: WaveformEditorProps
       loadAudio();
     }
   }, [audioUrl]);
-
-  // Update waveform visualization
-  useEffect(() => {
-    drawWaveform();
-  }, [waveformData, currentTime, selectedRegion, trimStart, trimEnd]);
 
   // Handle time updates
   useEffect(() => {
@@ -108,61 +283,8 @@ export default function WaveformEditor({ audioUrl, onSave }: WaveformEditorProps
     return filteredData;
   };
 
-  const drawWaveform = () => {
-    const canvas = canvasRef.current;
-    if (!canvas || waveformData.length === 0) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const { width, height } = canvas;
-    const barWidth = width / waveformData.length;
-
-    // Clear canvas
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-    ctx.fillRect(0, 0, width, height);
-
-    // Draw waveform bars
-    waveformData.forEach((value, index) => {
-      const barHeight = value * height * 0.8;
-      const x = index * barWidth;
-      const y = (height - barHeight) / 2;
-
-      const progress = (index / waveformData.length) * duration;
-
-      // Color based on state
-      let color = '#8b5cf6'; // Default purple
-
-      if (progress < trimStart || progress > trimEnd) {
-        color = 'rgba(139, 92, 246, 0.2)'; // Dimmed (trimmed region)
-      } else if (progress <= currentTime) {
-        color = '#ec4899'; // Pink (played region)
-      }
-
-      if (selectedRegion && progress >= selectedRegion.start && progress <= selectedRegion.end) {
-        color = '#10b981'; // Green (selected region)
-      }
-
-      ctx.fillStyle = color;
-      ctx.fillRect(x, y, barWidth - 1, barHeight);
-    });
-
-    // Draw playhead
-    const playheadX = (currentTime / duration) * width;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(playheadX - 1, 0, 2, height);
-
-    // Draw trim markers
-    const trimStartX = (trimStart / duration) * width;
-    const trimEndX = (trimEnd / duration) * width;
-
-    ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
-    ctx.fillRect(0, 0, trimStartX, height);
-    ctx.fillRect(trimEndX, 0, width - trimEndX, height);
-  };
-
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
+    const canvas = e.currentTarget;
     if (!canvas || !audioRef.current) return;
 
     const rect = canvas.getBoundingClientRect();
@@ -187,7 +309,6 @@ export default function WaveformEditor({ audioUrl, onSave }: WaveformEditorProps
   const handleTrim = async () => {
     if (!audioUrl) return;
 
-    // Call API to trim audio
     const response = await fetch('/api/audio/trim', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -236,16 +357,15 @@ export default function WaveformEditor({ audioUrl, onSave }: WaveformEditorProps
         </div>
       </div>
 
-      {/* Waveform Canvas */}
-      <div ref={containerRef} className="mb-6">
-        <canvas
-          ref={canvasRef}
-          width={1200}
-          height={200}
-          onClick={handleCanvasClick}
-          className="w-full h-48 bg-black/20 rounded-lg cursor-crosshair"
-        />
-      </div>
+      <WaveformCanvas
+        waveformData={waveformData}
+        currentTime={currentTime}
+        duration={duration}
+        trimStart={trimStart}
+        trimEnd={trimEnd}
+        selectedRegion={selectedRegion}
+        handleCanvasClick={handleCanvasClick}
+      />
 
       {/* Timeline */}
       <div className="mb-6 flex justify-between text-xs text-gray-400">
@@ -304,88 +424,16 @@ export default function WaveformEditor({ audioUrl, onSave }: WaveformEditorProps
         </div>
       </div>
 
-      {/* Trim Controls */}
-      <div className="mb-6 p-4 bg-black/20 rounded-lg">
-        <div className="flex items-center gap-4 mb-3">
-          <Scissors className="w-5 h-5 text-purple-400" />
-          <h4 className="text-sm font-medium text-white">Trim Audio</h4>
-        </div>
+      <TrimControls
+        duration={duration}
+        trimStart={trimStart}
+        setTrimStart={setTrimStart}
+        trimEnd={trimEnd}
+        setTrimEnd={setTrimEnd}
+        handleTrim={handleTrim}
+      />
 
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="block text-xs text-gray-400 mb-1">Start Time</label>
-            <input
-              type="number"
-              min="0"
-              max={duration}
-              step="0.1"
-              value={trimStart}
-              onChange={(e) => setTrimStart(Number(e.target.value))}
-              className="w-full px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs text-gray-400 mb-1">End Time</label>
-            <input
-              type="number"
-              min={trimStart}
-              max={duration}
-              step="0.1"
-              value={trimEnd}
-              onChange={(e) => setTrimEnd(Number(e.target.value))}
-              className="w-full px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
-        </div>
-
-        <button
-          onClick={handleTrim}
-          className="w-full py-2 bg-purple-500 hover:bg-purple-600 text-white font-medium rounded-lg transition-colors"
-        >
-          Apply Trim
-        </button>
-      </div>
-
-      {/* Effects Panel */}
-      <div className="p-4 bg-black/20 rounded-lg">
-        <button
-          onClick={() => setShowEffects(!showEffects)}
-          className="flex items-center gap-2 text-white mb-3"
-        >
-          <Sliders className="w-5 h-5 text-purple-400" />
-          <span className="text-sm font-medium">Audio Effects</span>
-        </button>
-
-        {showEffects && (
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => handleApplyEffects('reverb')}
-              className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm text-white transition-colors"
-            >
-              Reverb
-            </button>
-            <button
-              onClick={() => handleApplyEffects('echo')}
-              className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm text-white transition-colors"
-            >
-              Echo
-            </button>
-            <button
-              onClick={() => handleApplyEffects('bass-boost')}
-              className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm text-white transition-colors"
-            >
-              Bass Boost
-            </button>
-            <button
-              onClick={() => handleApplyEffects('normalize')}
-              className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm text-white transition-colors"
-            >
-              Normalize
-            </button>
-          </div>
-        )}
-      </div>
+      <EffectsPanel handleApplyEffects={handleApplyEffects} />
     </div>
   );
 }

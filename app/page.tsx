@@ -14,7 +14,8 @@ import {
   PlusCircle,
   FileAudio,
   History,
-  Info
+  Info,
+  Activity
 } from 'lucide-react';
 
 import SongGenerator from '@/components/SongGenerator';
@@ -25,10 +26,11 @@ import AlbumArtGenerator from '@/components/AlbumArtGenerator';
 import SongLibrary from '@/components/SongLibrary';
 import FileUpload from '@/components/FileUpload';
 import VoiceMemoRecorder from '@/components/VoiceMemoRecorder';
+import AudioAnalyzer from '@/components/AudioAnalyzer';
 
-import type { Song, StemFiles } from '@/types';
+import type { Song } from '@/types';
 
-type TabType = 'generate' | 'upload' | 'lyrics' | 'editor' | 'stems' | 'art' | 'library' | 'record';
+type TabType = 'generate' | 'upload' | 'lyrics' | 'editor' | 'stems' | 'art' | 'library' | 'record' | 'analysis';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabType>('generate');
@@ -73,6 +75,7 @@ export default function Home() {
     { id: 'generate', label: 'Generate', icon: Sparkles },
     { id: 'record', label: 'Record', icon: Mic },
     { id: 'upload', label: 'Upload', icon: FileAudio },
+    { id: 'analysis', label: 'Analysis', icon: Activity },
     { id: 'lyrics', label: 'Lyrics', icon: PlusCircle },
     { id: 'editor', label: 'Editor', icon: Scissors },
     { id: 'stems', label: 'Stems', icon: Layers },
@@ -156,6 +159,7 @@ export default function Home() {
                  {activeTab === 'generate' && 'Create Something Amazing'}
                  {activeTab === 'record' && 'Capture Your Inspiration'}
                  {activeTab === 'upload' && 'Import Your Assets'}
+                 {activeTab === 'analysis' && 'Deep Audio Insights'}
                  {activeTab === 'lyrics' && 'Polish Your Words'}
                  {activeTab === 'editor' && 'Precision Audio Editing'}
                  {activeTab === 'stems' && 'Deconstruct the Sound'}
@@ -167,6 +171,7 @@ export default function Home() {
                {activeTab === 'generate' && 'Use advanced multi-model AI to generate professional-quality tracks from simple text prompts.'}
                {activeTab === 'record' && 'High-fidelity voice recording with real-time pitch detection and studio FX.'}
                {activeTab === 'upload' && 'Upload vocals, instrumentals, or reference tracks for AI analysis and manipulation.'}
+               {activeTab === 'analysis' && 'Comprehensive spectral and technical analysis for professional-grade audio engineering.'}
                {activeTab === 'lyrics' && 'AI-powered lyric generation, rhyme scheme analysis, and smart structural editing.'}
                {activeTab === 'editor' && 'Interactive waveform editor with non-destructive trimming, fades, and professional audio effects.'}
                {activeTab === 'stems' && 'Separate any song into isolated vocals, drums, bass, and other instruments using state-of-the-art AI.'}
@@ -217,6 +222,12 @@ export default function Home() {
               <div className="max-w-3xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <FileUpload onFilesUploaded={handleFileUpload} />
               </div>
+            )}
+
+            {activeTab === 'analysis' && (
+               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <AudioAnalyzer />
+               </div>
             )}
 
             {activeTab === 'lyrics' && (
